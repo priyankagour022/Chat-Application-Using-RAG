@@ -1,0 +1,8 @@
+!pip install --upgrade langchain openai -q
+!pip install unstructured -q
+!pip install unstructured[local-inference] -q
+!pip install detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2 -q
+!apt-get install poppler-utils
+!pip install pinecone-client
+!pip install tiktoken -q
+
