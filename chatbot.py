@@ -111,7 +111,7 @@ def get_similar_docs(query, k=2, score=False):
         similar_docs = index.similarity_search_with_score(query, k=k)
     return similar_docs
 
-
+@main.command()
 def query():
     query = input("Enter the question!")
     similar_docs = get_similar_docs(query, score=True)
