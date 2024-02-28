@@ -1,4 +1,4 @@
-import os
+import click
 import os
 import openai
 import pinecone
@@ -8,58 +8,73 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
-directory = "/home/priyanka/Documents/Chatbot_Project/chatbot.py"
-os.environ["OPENAI_API_KEY"] = "Your_Key"
 
-def load_docs(directory):
-  loader = DirectoryLoader(directory)
-  documents = loader.load()
-  return documents
+openai_api_key = os.environ["OPENAI_API_KEY"]
 
-documents = load_docs(directory)
-len(documents)
-def split_docs(documents, chunk_size=1000, chunk_overlap=20):
-  text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-  docs = text_splitter.split_documents(documents)
-  return docs
-
-docs = split_docs(documents)
-print(len(docs))
-print(docs[0].page_content)
-embeddings = OpenAIEmbeddings(model_name="ada")
-
-query_result = embeddings.embed_query("Hello world")
-len(query_result)
-pinecone.init(
-    api_key="Your_Key",
-    environment="gcp-starter"
+@click.command()
+@click.option(
+    "-s",
+    "--source",
+    "source",
+    required=True,
+    help="The path where docs are sourced from for ingestion",
 )
+@click.option(
+    "-d",
+    "--destination",
+    "destination",
+    required=True,
+    help="The path where chunks are created",
+)
+@click.option(
+    "-c",
+    "--chunk-size",
+    "chunk_size",
+    required=False,
+    default=3000,
+    type=click.INT,
+    help="Chunk size",
+)
+@click.option(
+    "-ov",
+    "--overlap",
+    "overlap",
+    required=False,
+    default=100,
+    type=click.INT,
+    help="Overlap size to be used for the text splitter",
+)
+def main(source, destination, chunk_size, overlap):
+    documents = load_docs(source)
+    print(len(documents))
 
-index_name = "chatbot-demo"
+    docs = split_docs(documents, chunk_size, overlap)
+    print(len(docs))
+    print(docs[0].page_content)
 
-index = Pinecone.from_documents(docs, embeddings, index_name=index_name)
-def get_similiar_docs(query, k=2, score=False):
-  if score:
-    similar_docs = index.similarity_search_with_score(query, k=k)
-  else:
-    similar_docs = index.similarity_search(query, k=k)
-  return similar_docs
+    embeddings = OpenAIEmbeddings(model_name="ada")
 
-query  = input("Enter the question!")
-similar_docs = get_similiar_docs(query, score = True)
-similar_docs
-# model_name = "text-davinci-003"
-model_name = "gpt-3.5-turbo"
-#model_name = "gpt-4"
-llm = OpenAI(model_name=model_name)
+    query_result = embeddings.embed_query("Hello world")
+    print(len(query_result))
 
-chain = load_qa_chain(llm, chain_type="stuff")
+    pinecone.init(
+        api_key=os.environ["Your_Key"],
+        environment="gcp-starter"
+    )
 
-def get_answer(query):
-  similar_docs = get_similiar_docs(query)
-  answer = chain.run(input_documents=similar_docs, question=query)
-  return answer
-answer = get_answer(query)
-print(answer)
+    index_name = "chatbot-demo"
+    index = Pinecone.from_documents(docs, embeddings, index_name=index_name)
 
+    query = input("Enter the question!")
+    similar_docs = get_similiar_docs(query, score=True)
+    print(similar_docs)
 
+    model_name = "gpt-3.5-turbo"
+    llm = OpenAI(model_name=model_name)
+    chain = load_qa_chain(llm, chain_type="stuff")
+
+    answer = get_answer(query)
+    print(answer)
+
+if __name__ == "__main__":
+    main()
