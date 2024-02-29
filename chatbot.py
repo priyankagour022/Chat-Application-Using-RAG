@@ -93,6 +93,7 @@ def create_embeddings(source):
                 embedding = embeddings.embed_query(content)
                 # Add the embedding to the index
                 index.upsert(str(filename), embedding)
+                
         elif filename.endswith(".pdf"):
             with fitz.open(os.path.join(source, filename)) as doc:
                 text = ""
