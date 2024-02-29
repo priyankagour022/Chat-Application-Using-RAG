@@ -92,6 +92,16 @@ def create_embeddings(source):
                 embedding = embeddings.embed_query(content)
                 # Add the embedding to the index
                 index.upsert(str(filename), embedding)
+                
+        elif filename.endswith(".pdf"):
+            with fitz.open(os.path.join(source, filename)) as doc:
+                text = ""
+                for page in doc:
+                    text += page.get_text()
+                # Assuming text is a string of text, you need to embed it.
+                embedding = embeddings.embed_query(text)
+                # Add the embedding to the index
+                index.upsert(str(filename), embedding)
 
     print("Embeddings created and indexed in Pinecone.")
 
