@@ -2,6 +2,7 @@ import click
 import os
 import openai
 import pinecone
+import fitz #PyMuPDF
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -90,6 +91,15 @@ def create_embeddings(source):
                 content = f.read()
                 # Assuming content is a string of text, you need to embed it.
                 embedding = embeddings.embed_query(content)
+                # Add the embedding to the index
+                index.upsert(str(filename), embedding)
+        elif filename.endswith(".pdf"):
+            with fitz.open(os.path.join(source, filename)) as doc:
+                text = ""
+                for page in doc:
+                    text += page.get_text()
+                # Assuming text is a string of text, you need to embed it.
+                embedding = embeddings.embed_query(text)
                 # Add the embedding to the index
                 index.upsert(str(filename), embedding)
 
